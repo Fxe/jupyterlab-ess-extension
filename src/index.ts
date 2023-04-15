@@ -9,6 +9,7 @@ import { ILauncher } from '@jupyterlab/launcher';
 import { requestAPI } from './handler';
 import { EssFileBrowserExtension } from './essFileBrowser';
 import { EssDataAPI } from './essDataAPI';
+import { buildAuthUI } from './authUI';
 
 
 const ICON_CLASS = 'jp-LauncherCard';
@@ -73,17 +74,41 @@ const plugin: JupyterFrontEndPlugin<void> = {
         
       }
       const browser = new EssFileBrowserExtension(mainWidget, api, saveFile, user_arm, token_arm, token_kbase);
-      content.node.appendChild(mainWidget);
+
       browser.changePath([]).then(x => console.log('changed path!'));
-      //p.innerText = 'Notebook Browser!x'
-      
+
+      content.node.appendChild(mainWidget);
+      return widget;
+    }
+
+    const authWidget = async () => {
+      const content = new Widget();
+      const widget = new MainAreaWidget({ content });
+      widget.id = 'ess-settings-auth';
+      widget.title.label = 'Settings Auth';
+      widget.title.closable = true;
+      const mainWidget = document.createElement('div');
+      const fnSaveToken = (token: string): Promise<any> => {
+        return Promise.resolve('yay! ' + token);
+      }
+      const fnGetKBaseAuth = (): Promise<any> => {
+        return Promise.resolve({});
+      }
+      const fnGetARMAuth = (): Promise<any> => {
+        return Promise.resolve({});
+      }
+      buildAuthUI(mainWidget, fnGetKBaseAuth, fnGetARMAuth, fnSaveToken, fnSaveToken, fnSaveToken);
+
+      content.node.appendChild(mainWidget);
       return widget;
     }
     
     const { commands } = app;
     
     let widget = await newWidget();
+    let widgetAuth = await authWidget();
     const command: string = 'ess:datax';
+    const commandAuthWidget: string = 'ess:auth';
     commands.addCommand(command, {
       label: 'ESS Data Browser',
       iconClass: args => (args['isPalette'] ? '' : ICON_CLASS),
@@ -100,10 +125,27 @@ const plugin: JupyterFrontEndPlugin<void> = {
         app.shell.activateById(widget.id);
       }
     });
+    commands.addCommand(commandAuthWidget, {
+      label: 'ESS Settings Auth',
+      iconClass: args => (args['isPalette'] ? '' : ICON_CLASS),
+      execute: async () => {
+        // Regenerate the widget if disposed
+        if (widgetAuth.isDisposed) {
+          widgetAuth = await authWidget();
+        }
+        if (!widgetAuth.isAttached) {
+          // Attach the widget to the main work area if it's not there
+          app.shell.add(widgetAuth, 'main');
+        }
+        // Activate the widget
+        app.shell.activateById(widgetAuth.id);
+      }
+    });
     
     if (launcher) {
       console.log(launcher)
       launcher.add({command, category: 'ESS', rank: 1});
+      launcher.add({commandAuthWidget, category: 'ESS', rank: 1});
       //launcher.add({command, category: 'ESS', rank: 1});
     }
     
@@ -111,6 +153,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
       console.log('addItem')
       console.log(palette)
       palette.addItem({ command, category: 'ESS' });
+      palette.addItem({ commandAuthWidget, category: 'ESS' });
     }
     /*
     requestAPI<any>('token_kbase')
