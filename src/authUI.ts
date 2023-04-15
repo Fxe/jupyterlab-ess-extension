@@ -1,9 +1,8 @@
 export async function buildAuthUI(mainWidget: any,
   fnGetKBaseAuth: () => Promise<any>,
   fnGetARMAuth: () => Promise<any>,
-  fnSaveKBaseToken: (t:string) => Promise<any>,
-  fnSaveARMUser: (t:string) => Promise<any>,
-  fnSaveARMToken: (t:string) => Promise<any>) {
+  fnSaveKBaseAuth: (t:string) => Promise<any>,
+  fnSaveARMAuth: (u:string, t:string) => Promise<any>) {
 
   const kbaseAuthData = await fnGetKBaseAuth();
   const armAuthData = await fnGetARMAuth();
@@ -14,16 +13,19 @@ export async function buildAuthUI(mainWidget: any,
   const inputKBaseToken = document.createElement('input');
   inputKBaseToken.setAttribute('id', 'input-kbase-token');
   inputKBaseToken.setAttribute('type', 'password');
+  if (kbaseAuthData && kbaseAuthData.token) {
+    inputKBaseToken.setAttribute('value', kbaseAuthData.token);
+  }
 
   const buttonSaveKBaseToken = document.createElement('button');
   buttonSaveKBaseToken.setAttribute('type', 'button')
-  buttonSaveKBaseToken.textContent = 'Save'
+  buttonSaveKBaseToken.textContent = 'Save KBase Credentials'
   buttonSaveKBaseToken.addEventListener('click', function() {
     const token: string = inputKBaseToken.value;
     if (!token) {
       alert('Unable to save empty token');
     } else {
-      fnSaveKBaseToken(token).then(response => alert(response))
+      fnSaveKBaseAuth(token).then(response => alert(response))
     }
   });
 
@@ -32,35 +34,29 @@ export async function buildAuthUI(mainWidget: any,
   labelARMUser.textContent = 'ARM User:'
   const inputARMUser = document.createElement('input');
   inputARMUser.setAttribute('id', 'input-arm-user');
-
-  const buttonSaveARMUser = document.createElement('button');
-  buttonSaveARMUser.setAttribute('type', 'button')
-  buttonSaveARMUser.textContent = 'Save'
-  buttonSaveARMUser.addEventListener('click', function() {
-    const token: string = inputARMUser.value;
-    if (!token) {
-      alert('Unable to save empty token');
-    } else {
-      fnSaveARMUser(token).then(response => alert(response))
-    }
-  });
-
+  if (armAuthData && armAuthData.user) {
+    inputARMUser.setAttribute('value', armAuthData.user);
+  }
   const labelARMToken = document.createElement('label');
   labelARMToken.setAttribute('for', 'input-arm-token')
   labelARMToken.textContent = 'ARM Token:'
   const inputARMToken = document.createElement('input');
   inputARMToken.setAttribute('id', 'input-arm-token');
   inputARMToken.setAttribute('type', 'password');
+  if (armAuthData && armAuthData.token) {
+    inputARMToken.setAttribute('value', armAuthData.token);
+  }
 
   const buttonSaveARMToken = document.createElement('button');
   buttonSaveARMToken.setAttribute('type', 'button')
-  buttonSaveARMToken.textContent = 'Save'
+  buttonSaveARMToken.textContent = 'Save ARM Credentials'
   buttonSaveARMToken.addEventListener('click', function() {
     const token: string = inputARMToken.value;
-    if (!token) {
-      alert('Unable to save empty token');
+    const user: string = inputARMUser.value;
+    if (!token || !user) {
+      alert('Requires both user and token');
     } else {
-      fnSaveARMToken(token).then(response => alert(response))
+      fnSaveARMAuth(user, token).then(response => alert(response))
     }
   });
 
@@ -69,7 +65,6 @@ export async function buildAuthUI(mainWidget: any,
   mainWidget.append(buttonSaveKBaseToken);
   mainWidget.append(labelARMUser);
   mainWidget.append(inputARMUser);
-  mainWidget.append(buttonSaveARMUser);
   mainWidget.append(labelARMToken);
   mainWidget.append(inputARMToken);
   mainWidget.append(buttonSaveARMToken);

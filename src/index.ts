@@ -88,16 +88,25 @@ const plugin: JupyterFrontEndPlugin<void> = {
       widget.title.label = 'Settings Auth';
       widget.title.closable = true;
       const mainWidget = document.createElement('div');
-      const fnSaveToken = (token: string): Promise<any> => {
-        return Promise.resolve('yay! ' + token);
+      const fnSaveARMAuth = (user:string, token: string): Promise<any> => {
+        return requestAPI<any>('token_arm', {
+          body: JSON.stringify({ user: user, token: token}),
+          method: 'POST',
+        });
+      }
+      const fnSaveKBaseAuth = (token: string): Promise<any> => {
+        return requestAPI<any>('token_kbase', {
+          body: JSON.stringify({ token: token}),
+          method: 'POST',
+        });
       }
       const fnGetKBaseAuth = (): Promise<any> => {
-        return Promise.resolve({});
+        return requestAPI<any>('token_kbase');
       }
       const fnGetARMAuth = (): Promise<any> => {
-        return Promise.resolve({});
+        return requestAPI<any>('token_arm');
       }
-      buildAuthUI(mainWidget, fnGetKBaseAuth, fnGetARMAuth, fnSaveToken, fnSaveToken, fnSaveToken);
+      buildAuthUI(mainWidget, fnGetKBaseAuth, fnGetARMAuth, fnSaveKBaseAuth, fnSaveARMAuth);
 
       content.node.appendChild(mainWidget);
       return widget;
@@ -144,16 +153,16 @@ const plugin: JupyterFrontEndPlugin<void> = {
     
     if (launcher) {
       console.log(launcher)
-      launcher.add({command, category: 'ESS', rank: 1});
-      launcher.add({commandAuthWidget, category: 'ESS', rank: 1});
+      launcher.add({command: command, category: 'ESS', rank: 1});
+      launcher.add({command: commandAuthWidget, category: 'ESS', rank: 1});
       //launcher.add({command, category: 'ESS', rank: 1});
     }
     
     if (palette) {
       console.log('addItem')
       console.log(palette)
-      palette.addItem({ command, category: 'ESS' });
-      palette.addItem({ commandAuthWidget, category: 'ESS' });
+      palette.addItem({command: command, category: 'ESS' });
+      palette.addItem({command: commandAuthWidget, category: 'ESS' });
     }
     /*
     requestAPI<any>('token_kbase')
