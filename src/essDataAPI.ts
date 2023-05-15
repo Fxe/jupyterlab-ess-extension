@@ -39,7 +39,7 @@ export class EssDataAPI implements IEssDataAPI {
 
   constructor() {
     this.auth = {}
-    this.baseUrl = 'http://sequoia.mcs.anl.gov:30015';
+    this.baseUrl = 'https://ess.cels.anl.gov/data_api/';
   }
 
   setAuth(datasource:string, key:string, value:string) {
