@@ -120,10 +120,12 @@ export class EssFileBrowserExtension implements IEssFileBrowserExtension {
     this.currentItems = [];
     this.mainWidget = mainWidget;
     this.mainDiv = document.createElement('div')
+    this.mainDiv.setAttribute("style", "height: 100%;")
     this.filterBoxDiv = createDivElement('', 'lm-Widget p-Widget jp-FileBrowser-filterBox')
     this.initFilterBox(this.filterBoxDiv);
     this.fileBrowserCrumbsDiv = createDivElement('', 'lm-Widget p-Widget jp-BreadCrumbs jp-FileBrowser-crumbs')
     this.dirListingDiv = createDivElement('', 'lm-Widget p-Widget jp-DirListing jp-FileBrowser-listing jp-mod-selected')
+    this.dirListingDiv.setAttribute("style", "height: 100%;")
 
     this.mainDiv.append(this.filterBoxDiv)
     this.mainDiv.append(this.fileBrowserCrumbsDiv);

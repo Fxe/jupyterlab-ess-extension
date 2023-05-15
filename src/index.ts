@@ -4,12 +4,15 @@ import {
 } from '@jupyterlab/application';
 
 import { ICommandPalette, MainAreaWidget } from '@jupyterlab/apputils';
-import { Widget } from '@lumino/widgets';
+import { INotebookTracker, NotebookActions } from '@jupyterlab/notebook';
+import { IMainMenu } from '@jupyterlab/mainmenu';
+import { Menu, Widget } from '@lumino/widgets';
 import { ILauncher } from '@jupyterlab/launcher';
 import { requestAPI } from './handler';
 import { EssFileBrowserExtension } from './essFileBrowser';
 import { EssDataAPI } from './essDataAPI';
 import { buildAuthUI } from './authUI';
+import { buildAppUI } from './appUI';
 
 
 const ICON_CLASS = 'jp-LauncherCard';
@@ -20,12 +23,14 @@ const ICON_CLASS = 'jp-LauncherCard';
 const plugin: JupyterFrontEndPlugin<void> = {
   id: 'test_server:plugin',
   autoStart: true,
-  optional: [ILauncher, ICommandPalette],
-  //requires: [ICommandPalette],
+  optional: [ILauncher, ICommandPalette, INotebookTracker, IMainMenu],
+  //requires: [IMainMenu],
   activate: async (
     app: JupyterFrontEnd, 
     launcher: ILauncher | null, 
-    palette: ICommandPalette
+    palette: ICommandPalette,
+    tracker: INotebookTracker,
+    mainMenu: IMainMenu,
   ) => {
     console.log('JupyterLab extension test_server is activated!');
     
@@ -37,6 +42,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
       widget.title.label = 'Data Browser';
       widget.title.closable = true;
       const mainWidget = document.createElement('div');
+      mainWidget.setAttribute("style", "height: 100%; background: var(--jp-layout-color0);")
       let token_kbase = null;
       let token_arm = null;
       let user_arm = null;
@@ -80,6 +86,40 @@ const plugin: JupyterFrontEndPlugin<void> = {
       content.node.appendChild(mainWidget);
       return widget;
     }
+    
+    const appWidget = async () => {
+      const content = new Widget();
+      const widget = new MainAreaWidget({ content });
+      widget.id = 'ess-apps';
+      widget.title.label = 'ESS Apps';
+      widget.title.closable = true;
+      
+      const mainWidget = document.createElement('div');
+      mainWidget.setAttribute("style", "height: 100%; background: var(--jp-layout-color0);")
+      
+      const cards = [
+  {title: "ELM", icon: "ELM App", fn: function() { 
+    alert("action!")
+  }},
+  {title: "Hello World", icon: "Hello World App", fn: function() { 
+    const current = tracker.currentWidget;
+    if (current) {
+          const notebook = current!.content;
+    if (notebook) {
+      NotebookActions.insertBelow(notebook);
+        const activeCell = notebook.activeCell;
+        activeCell!.model.value.text = 'print("Hello World!")';
+    }
+    }
+
+        
+  }}
+]
+      buildAppUI(mainWidget, cards);
+      
+      content.node.appendChild(mainWidget);
+      return widget;
+    }
 
     const authWidget = async () => {
       const content = new Widget();
@@ -116,8 +156,10 @@ const plugin: JupyterFrontEndPlugin<void> = {
     
     let widget = await newWidget();
     let widgetAuth = await authWidget();
+    let widgetApp = await appWidget();
     const command: string = 'ess:datax';
     const commandAuthWidget: string = 'ess:auth';
+    const commandAppWidget: string = 'ess:apps';
     commands.addCommand(command, {
       label: 'ESS Data Browser',
       iconClass: args => (args['isPalette'] ? '' : ICON_CLASS),
@@ -150,11 +192,28 @@ const plugin: JupyterFrontEndPlugin<void> = {
         app.shell.activateById(widgetAuth.id);
       }
     });
+    commands.addCommand(commandAppWidget, {
+      label: 'ESS Apps',
+      iconClass: args => (args['isPalette'] ? '' : ICON_CLASS),
+      execute: async () => {
+        // Regenerate the widget if disposed
+        if (widgetApp.isDisposed) {
+          widgetApp = await appWidget();
+        }
+        if (!widgetApp.isAttached) {
+          // Attach the widget to the main work area if it's not there
+          app.shell.add(widgetApp, 'main');
+        }
+        // Activate the widget
+        app.shell.activateById(widgetApp.id);
+      }
+    });
     
     if (launcher) {
       console.log(launcher)
       launcher.add({command: command, category: 'ESS', rank: 1});
       launcher.add({command: commandAuthWidget, category: 'ESS', rank: 1});
+      launcher.add({command: commandAppWidget, category: 'ESS', rank: 1});
       //launcher.add({command, category: 'ESS', rank: 1});
     }
     
@@ -163,7 +222,46 @@ const plugin: JupyterFrontEndPlugin<void> = {
       console.log(palette)
       palette.addItem({command: command, category: 'ESS' });
       palette.addItem({command: commandAuthWidget, category: 'ESS' });
+      palette.addItem({command: commandAppWidget, category: 'ESS' });
     }
+    
+    /*
+    commands.addCommand('essAppELM', {
+      label: 'Add ESS ELM App', 
+      caption: 'ELM App', 
+      execute: () => {
+        const current = tracker.currentWidget;
+        const notebook = current!.content;
+        NotebookActions.insertBelow(notebook);
+        const activeCell = notebook.activeCell;
+        activeCell!.model.value.text = 'import ELM\n...';
+      }
+    });
+    commands.addCommand('essAppTest', {
+      label: 'Add Hello World App', 
+      caption: 'Hello World App', 
+      execute: () => {
+        const current = tracker.currentWidget;
+        const notebook = current!.content;
+        NotebookActions.insertBelow(notebook);
+        const activeCell = notebook.activeCell;
+        activeCell!.model.value.text = 'print("Hello World!")';
+      }
+    });
+    
+    const appMenu = new Menu({ commands });
+    appMenu.title.label = 'ESS Apps';
+    appMenu.addItem({command: 'essAppELM' });
+    appMenu.addItem({command: 'essAppTest' });
+    
+    console.log('add APP menu!');
+    if (mainMenu) {
+    mainMenu.addMenu(appMenu, {rank: 310});  
+    }
+    */
+    
+    app.shell.add(widgetApp, 'left', { rank: 200 })
+    app.shell.add(widget, 'left', { rank: 210 })
     /*
     requestAPI<any>('token_kbase')
       .then(data => {

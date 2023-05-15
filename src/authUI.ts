@@ -25,7 +25,7 @@ export async function buildAuthUI(mainWidget: any,
     if (!token) {
       alert('Unable to save empty token');
     } else {
-      fnSaveKBaseAuth(token).then(response => alert(response))
+      fnSaveKBaseAuth(token).then(response => alert(JSON.stringify(response)))
     }
   });
 
@@ -56,7 +56,7 @@ export async function buildAuthUI(mainWidget: any,
     if (!token || !user) {
       alert('Requires both user and token');
     } else {
-      fnSaveARMAuth(user, token).then(response => alert(response))
+      fnSaveARMAuth(user, token).then(response => alert(JSON.stringify(response)))
     }
   });
 
