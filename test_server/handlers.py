@@ -6,6 +6,9 @@ from jupyter_server.utils import url_path_join
 import tornado
 
 def get_ess_secret_folder():
+    _path = os.path.abspath(os.path.expanduser('~/.ess'))
+    if not os.path.exists(_path):
+        os.mkdir(_path)
     return os.path.abspath(os.path.expanduser('~/.ess'))
 
 class RouteHandler(APIHandler):
@@ -19,22 +22,27 @@ class route_ess_data_save_file(APIHandler):
     @tornado.web.authenticated
     def post(self):
         body = self.get_json_body()
+        mode = 'w'
         t = body['kind']
         if t == 'hex_str':
-          data = bytes.fromhex(body['data'])
+            data = bytes.fromhex(body['data'])
+            mode = 'wb'
         elif t == 'str':
-          data = body['data']
+            data = body['data']
         elif t == 'json':
-          data = json.dumps(body['data'])
+            data = json.dumps(body['data'])
         else:
-          self.finish({"error": f"unknown kind {t}"})
+            self.finish({"error": f"unknown kind {t}"})
         filename = body['filename'].strip()
+        print(body)
+        print(mode)
+        print(type(data))
         try:
             abspath = os.path.expanduser('~/') + filename
             if os.path.exists(abspath):
                 self.finish({"error": "file exists: " + abspath})
             else:
-                with open(abspath, 'w') as fh:
+                with open(abspath, mode) as fh:
                     fh.write(data)
                 self.finish({"status": "success", "file": abspath})
         except Exception as e:
