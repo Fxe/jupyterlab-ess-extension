@@ -98,8 +98,27 @@ const plugin: JupyterFrontEndPlugin<void> = {
       mainWidget.setAttribute("style", "height: 100%; background: var(--jp-layout-color0);")
       
       const cards = [
-  {title: "ELM", icon: "ELM App", fn: function() { 
-    alert("action!")
+  {title: "ELM Appl", icon: "ELM", fn: function() { 
+    const current = tracker.currentWidget;
+    if (current) {
+          const notebook = current!.content;
+    if (notebook) {
+      NotebookActions.insertBelow(notebook);
+        const activeCell = notebook.activeCell;
+        activeCell!.model.value.text = 'import elm\nelmw = elm.ELMWidget()\nelmw';
+    }
+    }
+  }},
+  {title: "CLM parameter editor", icon: "CLM", fn: function() { 
+    const current = tracker.currentWidget;
+    if (current) {
+          const notebook = current!.content;
+    if (notebook) {
+      NotebookActions.insertBelow(notebook);
+        const activeCell = notebook.activeCell;
+        activeCell!.model.value.text = 'import clmParamEditor as clm_editor\nedit_clm = clm_editor.EditCLMParamWidget()\nedit_clm';
+    }
+    }
   }},
   {title: "Hello World", icon: "Hello World App", fn: function() { 
     const current = tracker.currentWidget;
